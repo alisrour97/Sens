@@ -25,12 +25,12 @@ TrajectoryPublisher::TrajectoryPublisher() : Node("trajectory_publisher") {
 	auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 0), qos_profile);
 
 	// Publishers
-	offboard_control_mode_publisher_ = this->create_publisher<OffboardControlMode>("/fmu/in/offboard_control_mode", 0);
-	trajectory_setpoint_publisher_ = this->create_publisher<TrajectorySetpoint>("/fmu/in/trajectory_setpoint", 0);
-	vehicle_command_publisher_ = this->create_publisher<VehicleCommand>("/fmu/in/vehicle_command", 0);
+	offboard_control_mode_publisher_ = this->create_publisher<OffboardControlMode>("/fmu/offboard_control_mode/in", 10);
+	trajectory_setpoint_publisher_ = this->create_publisher<TrajectorySetpoint>("/fmu/trajectory_setpoint/in", 10);
+	vehicle_command_publisher_ = this->create_publisher<VehicleCommand>("/fmu/vehicle_command/in", 10);
 
 	// Subscribers
-    odom_sub_ = this->create_subscription<px4_msgs::msg::VehicleOdometry>("/fmu/out/vehicle_odometry", qos,
+    odom_sub_ = this->create_subscription<px4_msgs::msg::VehicleOdometry>("/fmu/vehicle_odometry/out",qos,
                     std::bind(&TrajectoryPublisher::odomFeedback, this, std::placeholders::_1));
 
 	takeoff_altitude_ = -1.5;
@@ -83,7 +83,9 @@ void TrajectoryPublisher::publish_offboard_control_mode(){
 
 void TrajectoryPublisher::takeoff(){
 	TrajectorySetpoint msg{};
-	msg.position = {0.0, 0.0, takeoff_altitude_};
+	msg.x = 0.0;
+	msg.y = 0.0;
+	msg.z = takeoff_altitude_;
 	msg.yaw = takeoff_yaw_; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 
@@ -93,7 +95,9 @@ void TrajectoryPublisher::takeoff(){
 
 void TrajectoryPublisher::land(){
 	TrajectorySetpoint msg{};
-	msg.position = {0.0, 0.0, -1.0};
+	msg.x = 0.0;
+	msg.y = 0.0;
+	msg.z = 1.0;
 	msg.yaw = yaw_; // [-PI:PI]
 	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
 
@@ -197,8 +201,12 @@ void TrajectoryPublisher::publisher(){
 			else if(traj_cnt_ < trajectory_setpoints_-1){
 				takeoff_ = true;
 
-				traj_sp_.position = {des_pos_(traj_cnt_,0), des_pos_(traj_cnt_,1), des_pos_(traj_cnt_,2)};
-				traj_sp_.velocity = {des_vel_(traj_cnt_,0), des_vel_(traj_cnt_,1), des_vel_(traj_cnt_,2)};
+				traj_sp_.x = des_pos_(traj_cnt_,0);
+				traj_sp_.y = des_pos_(traj_cnt_,1);
+				traj_sp_.z = des_pos_(traj_cnt_,2);
+				traj_sp_.vx = des_vel_(traj_cnt_,0);
+				traj_sp_.vy = des_vel_(traj_cnt_,1);
+				traj_sp_.vz = des_vel_(traj_cnt_,2);
 				traj_sp_.acceleration = {des_acc_(traj_cnt_,0), des_acc_(traj_cnt_,1), des_acc_(traj_cnt_,2)};
 				traj_sp_.yaw = des_yaw_(traj_cnt_) + takeoff_yaw_;
 				traj_sp_.timestamp = this->get_clock()->now().nanoseconds() / 1000;
@@ -235,13 +243,13 @@ void TrajectoryPublisher::publisher(){
 
 void TrajectoryPublisher::odomFeedback(px4_msgs::msg::VehicleOdometry::UniquePtr msg){
     
-    pos_ << msg->position[0], msg->position[1], msg->position[2];
-    vel_ << msg->velocity[0], msg->velocity[1], msg->velocity[2];
+    pos_ << msg->x, msg->y, msg->z;
+    vel_ << msg->vx, msg->vy, msg->vz;
     
 	std::cout << "pos: " << pos_.transpose() << std::endl;
 
     R_att_ =  QuatToMat( Eigen::Vector4f( msg->q[0], msg->q[1], msg->q[2], msg->q[3] ));
-    w_att_ << msg->angular_velocity[0], msg->angular_velocity[1], msg->angular_velocity[2];
+    w_att_ << msg->rollspeed, msg->pitchspeed, msg->yawspeed;
 
 	yaw_ = atan2(R_att_(1,0),R_att_(0,0));
 
