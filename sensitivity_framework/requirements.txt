@@ -1,0 +1,11 @@
+pandas==2.0.1
+numpy==1.24.3
+jitcode==1.7.0
+jitcxde-common==1.5.2
+symengine==0.8.1
+sympy==1.9
+collection==0.1.6
+nlopt==2.7.1
+matplotlib==3.7.1
+scipy==1.10.1
+

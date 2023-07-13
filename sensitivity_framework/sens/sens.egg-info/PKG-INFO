@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: sens
+Version: 0.0.10
+Summary: Closed Loop Sensitivity Framework
+Author: Ali SROUR
+Author-email: ali.srour@irisa.fr
+License: MIT
+Requires-Python: >=3.10.6
+Provides-Extra: dev
