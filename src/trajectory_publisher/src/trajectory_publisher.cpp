@@ -24,6 +24,12 @@ TrajectoryPublisher::TrajectoryPublisher() : Node("trajectory_publisher") {
 	rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
 	auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 0), qos_profile);
 
+	timesync_sub_ = this->create_subscription<px4_msgs::msg::Timesync>("/fmu/timesync/out",10,
+		[this](const px4_msgs::msg::Timesync::UniquePtr msg) {
+			timestamp_.store(msg->timestamp);
+		}
+	);
+
 	// Publishers
 	offboard_control_mode_publisher_ = this->create_publisher<OffboardControlMode>("/fmu/offboard_control_mode/in", 10);
 	trajectory_setpoint_publisher_ = this->create_publisher<TrajectorySetpoint>("/fmu/trajectory_setpoint/in", 10);
@@ -71,7 +77,7 @@ void TrajectoryPublisher::disarm(){
  */
 void TrajectoryPublisher::publish_offboard_control_mode(){
 	OffboardControlMode msg{};
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.timestamp = timestamp_.load();
 	msg.position = true;
 	msg.velocity = true;
 	msg.acceleration = true;
@@ -87,7 +93,7 @@ void TrajectoryPublisher::takeoff(){
 	msg.y = 0.0;
 	msg.z = takeoff_altitude_;
 	msg.yaw = takeoff_yaw_; // [-PI:PI]
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.timestamp = timestamp_.load();
 
 	trajectory_setpoint_publisher_->publish(msg);
 
@@ -99,7 +105,7 @@ void TrajectoryPublisher::land(){
 	msg.y = 0.0;
 	msg.z = 1.0;
 	msg.yaw = yaw_; // [-PI:PI]
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.timestamp = timestamp_.load();
 
 	trajectory_setpoint_publisher_->publish(msg);
 
@@ -114,7 +120,7 @@ void TrajectoryPublisher::land(){
 void TrajectoryPublisher::publish_vehicle_command(uint16_t command, float param1,
 					      float param2){
 	VehicleCommand msg{};
-	msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+	msg.timestamp = timestamp_.load();
 	msg.param1 = param1;
 	msg.param2 = param2;
 	msg.command = command;
@@ -209,7 +215,7 @@ void TrajectoryPublisher::publisher(){
 				traj_sp_.vz = des_vel_(traj_cnt_,2);
 				traj_sp_.acceleration = {des_acc_(traj_cnt_,0), des_acc_(traj_cnt_,1), des_acc_(traj_cnt_,2)};
 				traj_sp_.yaw = des_yaw_(traj_cnt_) + takeoff_yaw_;
-				traj_sp_.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+				traj_sp_.timestamp = timestamp_.load();
 
 				publish_offboard_control_mode();
 				trajectory_setpoint_publisher_->publish(traj_sp_);

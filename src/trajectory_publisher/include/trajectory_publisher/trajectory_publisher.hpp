@@ -42,6 +42,8 @@ private:
 	rclcpp::Publisher<TrajectorySetpoint>::SharedPtr trajectory_setpoint_publisher_;
 	rclcpp::Publisher<VehicleCommand>::SharedPtr vehicle_command_publisher_;
 	rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr odom_sub_;
+	rclcpp::Subscription<px4_msgs::msg::Timesync>::SharedPtr timesync_sub_;
+
 
 	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
 

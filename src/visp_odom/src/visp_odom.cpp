@@ -4,11 +4,11 @@
 
 VispOdom::VispOdom() : Node("trajectory_publisher") {
 
-	timesync_sub_ = this->create_subscription<px4_msgs::msg::Timesync>("/fmu/timesync/out",
-    10,
-    [this](const px4_msgs::msg::Timesync::UniquePtr msg) {
-        timestamp_.store(msg->timestamp);
-    });
+	timesync_sub_ = this->create_subscription<px4_msgs::msg::Timesync>("/fmu/timesync/out",10,
+		[this](const px4_msgs::msg::Timesync::UniquePtr msg) {
+			timestamp_.store(msg->timestamp);
+		}
+	);
 
 	// Publishers
 	odom_publisher_ = this->create_publisher<px4_msgs::msg::VehicleVisualOdometry>("/fmu/vehicle_visual_odometry/in", 1);
