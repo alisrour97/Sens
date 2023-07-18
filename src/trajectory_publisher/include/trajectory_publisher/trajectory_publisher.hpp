@@ -3,6 +3,7 @@
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_control_mode.hpp>
 #include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <px4_msgs/msg/timesync.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <Eigen/Eigen>
 #include <stdint.h>
@@ -47,9 +48,11 @@ private:
 
 	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
 
-	float takeoff_altitude_;
 	float takeoff_yaw_;
 
+
+	Eigen::Vector3f takeoff_pos_; // drone takeoff linear position
+	Eigen::Vector3f land_pos_; // drone landing linear position
 	Eigen::Vector3f pos_; // drone linear position
     Eigen::Vector3f vel_; // drone linear velocity
     Eigen::Matrix3f R_att_; // drone attitude rotation matrix
@@ -58,6 +61,7 @@ private:
 
 	bool landed_;
 	bool takeoff_;
+	bool armed_;
 
     int traj_cnt_, offboard_setpoint_counter_;
     TrajectorySetpoint traj_sp_{};

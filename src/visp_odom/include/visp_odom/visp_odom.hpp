@@ -40,6 +40,10 @@ private:
 	vpMocapQualisys qualisys_;
 	vpHomogeneousMatrix pose_;
 	vpTranslationVector position_;
+	vpRotationMatrix rot_mat_, rot_mat_visp2NED_;
+	vpQuaternionVector quat_;
+	vpRxyzVector eul_;
+	double yaw_;
 
 };
 

@@ -15,6 +15,16 @@ VispOdom::VispOdom() : Node("trajectory_publisher") {
 	
 	qualisys_.setVerbose(false);
   	qualisys_.setServerAddress("192.168.30.42");
+
+	rot_mat_visp2NED_[0][0] = 0.0;
+	rot_mat_visp2NED_[0][1] = 1.0;
+	rot_mat_visp2NED_[0][2] = 0.0;
+	rot_mat_visp2NED_[1][0] = 1.0;
+	rot_mat_visp2NED_[1][1] = 0.0;
+	rot_mat_visp2NED_[1][2] = 0.0;
+	rot_mat_visp2NED_[2][0] = 0.0;
+	rot_mat_visp2NED_[2][1] = 0.0;
+	rot_mat_visp2NED_[2][2] = -1.0; 
   	
   	timestamp_sample = 0;
 
@@ -32,10 +42,22 @@ void VispOdom::publisher(){
   		
   		if(rclcpp::ok()){
   			      
-      		if (!qualisys_.getSpecificBodyPose("Acanthis_5", pose_)) {
+      		if (!qualisys_.getSpecificBodyPose("Acanthis_2", pose_)) {
 			std::cout << "Qualisys error. Check the Qualisys Task Manager" << std::endl;
       		}
       		position_ = pose_.getTranslationVector();
+
+			rot_mat_ = pose_.getRotationMatrix();
+			//quat_.buildFrom(rot_mat_);
+			
+
+			yaw_ = atan2(rot_mat_[1][0], rot_mat_[0][0]);
+			eul_.buildFrom(0, 0, -yaw_);
+
+			quat_.buildFrom(vpRotationMatrix(eul_));
+
+			std::cout << "R visp: " << pose_.getRotationMatrix() << std::endl;
+
       		timestamp_sample++;
       		
       		odometry_.timestamp = timestamp_.load();
@@ -44,6 +66,8 @@ void VispOdom::publisher(){
       		odometry_.x = position_[1];
       		odometry_.y = position_[0];
       		odometry_.z = -position_[2];
+
+			odometry_.q = {quat_.w(), quat_.x(), quat_.y(), quat_.z()};
       		
       		//std::cout << "P: " << position_.t() << std::endl;
       		
