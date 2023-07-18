@@ -45,6 +45,9 @@ private:
 	vpRxyzVector eul_;
 	double yaw_;
 
+
+	std::string drone_name_;
+
 };
 
 #endif

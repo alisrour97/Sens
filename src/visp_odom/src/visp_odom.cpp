@@ -10,6 +10,11 @@ VispOdom::VispOdom() : Node("trajectory_publisher") {
 		}
 	);
 
+	declare_parameter("drone_name","Acanthis_5");
+
+	drone_name_ = get_parameter("drone_name").as_string();
+
+
 	// Publishers
 	odom_publisher_ = this->create_publisher<px4_msgs::msg::VehicleVisualOdometry>("/fmu/vehicle_visual_odometry/in", 1);
 	
@@ -42,7 +47,7 @@ void VispOdom::publisher(){
   		
   		if(rclcpp::ok()){
   			      
-      		if (!qualisys_.getSpecificBodyPose("Acanthis_2", pose_)) {
+      		if (!qualisys_.getSpecificBodyPose(drone_name_.c_str(), pose_)) {
 			std::cout << "Qualisys error. Check the Qualisys Task Manager" << std::endl;
       		}
       		position_ = pose_.getTranslationVector();
