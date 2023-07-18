@@ -61,7 +61,7 @@ void VispOdom::publisher(){
 
 			quat_.buildFrom(vpRotationMatrix(eul_));
 
-			std::cout << "R visp: " << pose_.getRotationMatrix() << std::endl;
+			//std::cout << "R visp: " << pose_.getRotationMatrix() << std::endl;
 
       		timestamp_sample++;
       		
