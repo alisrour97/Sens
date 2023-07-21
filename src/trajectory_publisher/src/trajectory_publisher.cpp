@@ -45,12 +45,14 @@ TrajectoryPublisher::TrajectoryPublisher() : Node("trajectory_publisher") {
 	load_trajectory();
 
 	takeoff_pos_(2) = des_pos_(0, 2);
+	land_altitude_ = pos_(2);
 
 	offboard_setpoint_counter_ = 0;
 
 	landed_ = false;
 	takeoff_ = false;
 	armed_ = false;
+	arrived_to_start_ = false;
 
 
 
@@ -206,14 +208,37 @@ void TrajectoryPublisher::publisher(){
 		}
 		else if(armed_){
 			
-			if(fabs(pos_(2)) < fabs(takeoff_pos_(2)) && !takeoff_){
+			if(fabs(pos_(2)) < (fabs(takeoff_pos_(2)) - 0.02) && !takeoff_){
 				//this->publish_vehicle_command(VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1, 6);
 				publish_offboard_control_mode();
 				std::cout << "Taking OFF" << std::endl;
 				this->takeoff();
 			}
-			else if(traj_cnt_ < trajectory_setpoints_-1){
+			else if(!arrived_to_start_ && ((fabs(pos_(0) - des_pos_(0,0)) > 0.02) || (fabs(pos_(1) - des_pos_(0,1)) > 0.02))){
+				
 				takeoff_ = true;
+
+				std::cout << "Moving to initial setpoint" << std::endl;
+
+				traj_sp_.x = des_pos_(0,0);
+				traj_sp_.y = des_pos_(0,1);
+				traj_sp_.z = des_pos_(0,2);
+				traj_sp_.vx = des_vel_(0,0);
+				traj_sp_.vy = des_vel_(0,1);
+				traj_sp_.vz = des_vel_(0,2);
+				traj_sp_.acceleration = {des_acc_(0,0), des_acc_(0,1), des_acc_(0,2)};
+				traj_sp_.yaw = des_yaw_(0);
+				traj_sp_.timestamp = timestamp_.load();
+
+				publish_offboard_control_mode();
+				trajectory_setpoint_publisher_->publish(traj_sp_);
+			}
+			else if(traj_cnt_ < trajectory_setpoints_-1){
+
+				std::cout << "Following trajectory" << std::endl;
+
+				takeoff_ = true;
+				arrived_to_start_ = true;				
 
 				traj_sp_.x = des_pos_(traj_cnt_,0);
 				traj_sp_.y = des_pos_(traj_cnt_,1);
@@ -237,11 +262,16 @@ void TrajectoryPublisher::publisher(){
 			}
 			else{
 				if(!landed_){
-					publish_offboard_control_mode();
-					std::cout << "LANDING" << std::endl;
-					this->land();
-					publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_LAND);
-
+					if(fabs(pos_(2)) > fabs(land_altitude_) + 0.02) {
+						publish_offboard_control_mode();
+						std::cout << "LANDING" << std::endl;
+						this->land();
+					}
+					else{
+						std::cout << "Published landing command" << std::endl;
+						publish_vehicle_command(VehicleCommand::VEHICLE_CMD_NAV_LAND);
+					}
+					
 					RCLCPP_INFO(this->get_logger(), "Land command send");
 					landed_ = true;
 				}

@@ -48,7 +48,7 @@ private:
 
 	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped
 
-	float takeoff_yaw_;
+	float takeoff_yaw_, land_altitude_;
 
 
 	Eigen::Vector3f takeoff_pos_; // drone takeoff linear position
@@ -62,6 +62,7 @@ private:
 	bool landed_;
 	bool takeoff_;
 	bool armed_;
+	bool arrived_to_start_;
 
     int traj_cnt_, offboard_setpoint_counter_;
     TrajectorySetpoint traj_sp_{};

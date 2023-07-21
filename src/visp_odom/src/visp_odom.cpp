@@ -72,7 +72,7 @@ void VispOdom::publisher(){
       		odometry_.y = position_[0];
       		odometry_.z = -position_[2];
 
-			odometry_.q = {quat_.w(), quat_.x(), quat_.y(), quat_.z()};
+			odometry_.q = {(float)quat_.w(), (float)quat_.x(), (float)quat_.y(), (float)quat_.z()};
       		
       		//std::cout << "P: " << position_.t() << std::endl;
       		
